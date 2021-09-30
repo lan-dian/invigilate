@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hfut.invigilate.infra.dal.dao.InvigilateRecordMapper">
+
+
+    <update id="replace">
+        update invigilate_record IR
+        set work_id=#{workId},
+            state=0,
+            msg=null
+        where code = #{invigilateCode}
+    </update>
+    <update id="updateStateByCode">
+        update invigilate_record
+        set state=#{state}
+        where code = #{code}
+    </update>
+    <resultMap id="listInvigilateExchange"
+               type="com.hfut.invigilate.domain.invigilate.valueobject.dto.InvigilateExchangeDTO">
+        <id property="invigilateCode" column="invigilate_code"/>
+        <result property="msg" column="msg"/>
+        <association property="teacher" columnPrefix="teacher_"
+                     javaType="com.hfut.invigilate.domain.invigilate.valueobject.dto.TeacherDTO" autoMapping="true">
+            <id column="work_id" property="workId"/>
+        </association>
+        <association property="exam" columnPrefix="exam_"
+                     javaType="com.hfut.invigilate.domain.exam.valueobject.dto.ExamDTO" autoMapping="true">
+
+        </association>
+    </resultMap>
+    <select id="listInvigilateExchange" resultMap="listInvigilateExchange">
+        select U.work_id      as teacher_work_id,
+               U.telephone    as teacher_telephone,
+               U.college      as teacher_college,
+               U.name         as teacher_name,
+               EI.name        as exam_name,
+               EI.date        as exam_date,
+               EI.start_time  as exam_start_time,
+               EI.end_time    as exam_end_time,
+               EI.address     as exam_address,
+               EI.student_num as exam_student_num,
+               IR.msg         as msg,
+               IR.code        as invigilate_code
+        from invigilate_record IR
+                 left join exam_info EI on IR.exam_code = EI.code
+                 left join user U on U.work_id = IR.work_id
+        where (IR.state = 3 or IR.state = 4)
+          and IR.work_id != #{workId}
+    </select>
+    <resultMap id="listMyExchange"
+               type="com.hfut.invigilate.domain.invigilate.valueobject.dto.MyInvigilateOnExchangeDTO"
+               autoMapping="true">
+        <id property="invigilateCode" column="invigilate_code"/>
+        <result property="state" column="state" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <association property="exam" columnPrefix="exam_" autoMapping="true">
+
+        </association>
+    </resultMap>
+    <select id="listMyExchange" resultMap="listMyExchange">
+        select IR.code        as invigilate_code,
+               IR.state       as state,
+               IR.msg         as msg,
+               EI.code        as exam_code,
+               EI.address     as exam_address,
+               EI.date        as exam_date,
+               EI.start_time  as exam_start_time,
+               EI.end_time    as exam_end_time,
+               EI.name        as exam_name,
+               EI.student_num as exam_student_num
+        from invigilate_record IR
+                 left join exam_info EI on IR.exam_code = EI.code
+        where IR.work_id = #{workId}
+          and (IR.state = 3 or IR.state = 4)
+    </select>
+
+
+    <resultMap id="invigilatePage" autoMapping="true"
+               type="com.hfut.invigilate.domain.invigilate.valueobject.dto.invigilate_page.InvigilatePageDTO">
+        <id property="code" column="code"/>
+        <association property="examDTO" columnPrefix="exam_" autoMapping="true">
+
+        </association>
+        <association property="teacherDTO" columnPrefix="teacher_" autoMapping="true">
+
+        </association>
+    </resultMap>
+
+    <select id="page" resultMap="invigilatePage">
+        select JK.code       as code,
+               JK.state      as state,
+               JK.msg        as msg,
+               E.code        as exam_code,
+               E.name        as exam_name,
+               E.date        as exam_date,
+               E.start_time  as exam_start_time,
+               E.end_time    as exam_end_time,
+               E.address     as exam_address,
+               E.student_num as exam_student_num,
+               E.teacher_num as exam_teacher_num,
+               U.name        as teacher_name,
+               U.work_id     as teacher_work_id,
+               U.telephone   as teacher_telephone,
+               U.college     as teacher_college
+        from invigilate_record JK
+                 left join exam_info E on JK.exam_code = E.code
+                 left join user U on U.work_id = JK.work_id
+        <where>
+            <if test="q!=null">
+                <if test="q.workId!=null">
+                    and U.work_id like '%'#{q.workId}'%'
+                </if>
+                <if test="q.teacherName!=null">
+                    and U.name like '%'#{q.teacherName}'%'
+                </if>
+                <if test="q.examName!=null">
+                    and E.name like '%'#{q.examName}'%'
+                </if>
+                <if test="q.date!=null">
+                    and E.date=#{q.date}
+                </if>
+            </if>
+        </where>
+        limit #{pos},#{limit}
+    </select>
+    <select id="count" resultType="java.lang.Integer">
+        select count(*)
+        from invigilate_record JK
+        left join exam_info E on JK.exam_code = E.code
+        left join user U on U.work_id = JK.work_id
+        <where>
+            <if test="q!=null">
+                <if test="q.workId!=null">
+                    and U.work_id like '%'#{q.workId}'%'
+                </if>
+                <if test="q.teacherName!=null">
+                    and U.name like '%'#{q.teacherName}'%'
+                </if>
+                <if test="q.examName!=null">
+                    and E.name like '%'#{q.examName}'%'
+                </if>
+                <if test="q.date!=null">
+                    and E.date=#{q.date}
+                </if>
+            </if>
+        </where>
+    </select>
+
+</mapper>

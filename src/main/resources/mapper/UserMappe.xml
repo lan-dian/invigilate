@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hfut.invigilate.infra.dal.dao.UserMapper">
+    <update id="updateWorkId">
+        update user set work_id=#{newWorkId} where work_id=#{workId};
+        update user_role set work_id=#{newWorkId} where work_id=#{workId};
+        update invigilate_record set work_id=#{newWorkId} where work_id=#{workId};
+        update exchange_recode set work_id=#{newWorkId} where work_id=#{workId};
+    </update>
+
+    <delete id="delete">
+        delete U.*,R.*
+        from user U
+                 left join user_role R on R.work_id=U.work_id
+        <if test="ew!=null">
+            ${ew.customSqlSegment}
+        </if>
+    </delete>
+
+    <select id="getUserByWorkIdAndRoleId" resultType="com.hfut.invigilate.interfaces.model.dto.UserLoginDTO">
+        select U.password, UR.role, U.work_id, U.name
+        from user U
+                 left join user_role UR on UR.work_id = U.work_id
+        where U.work_id = #{workId}
+          and UR.role = #{role}
+    </select>
+
+
+    <resultMap id="getUser" type="com.hfut.invigilate.domain.user.vlaueobject.dto.UserDTO" autoMapping="true">
+        <id property="workId" column="work_id"/>
+        <collection property="roles" ofType="integer">
+            <result column="role"/>
+        </collection>
+    </resultMap>
+
+    <select id="getByWorkId" resultMap="getUser">
+        select U.name,
+               U.work_id,
+               U.college,
+               U.telephone,
+               U.password,
+               R.role
+        from user U
+                 left join user_role R on R.work_id = U.work_id
+        where U.work_id = #{workId}
+    </select>
+
+
+    <select id="get" resultMap="getUser">
+        select U.name,
+        U.work_id,
+        U.college,
+        U.telephone,
+        U.password,
+        R.role
+        from user U
+        left join user_role R on R.work_id = U.work_id
+        <if test="ew!=null">
+            ${ew.customSqlSegment}
+        </if>
+    </select>
+
+    <select id="list" resultMap="getUser">
+        select U.name,
+        U.work_id,
+        U.college,
+        U.telephone,
+        U.password,
+        R.role
+        from user U
+        left join user_role R on R.work_id = U.work_id
+        <if test="ew!=null">
+            ${ew.customSqlSegment}
+        </if>
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hfut.invigilate.infra.dal.dao.ExchangeRecodeMapper">
+    <resultMap id="listIntend" type="com.hfut.invigilate.domain.invigilate.valueobject.dto.IntendDTO"
+               autoMapping="true">
+        <id property="workId" column="work_id"/>
+        <collection property="exam" columnPrefix="exam_" autoMapping="true"
+                    ofType="com.hfut.invigilate.domain.invigilate.valueobject.dto.IntendExamDTO">
+
+        </collection>
+    </resultMap>
+    <delete id="delByTargetCode">
+        delete
+        from exchange_recode
+        where target_code = #{targetCode}
+    </delete>
+
+    <select id="listIntendByInvigilateCode" resultMap="listIntend">
+        select ER.invigilate_code as exam_invigilate_code,
+               ER.target_code     as target_code,
+               ER.code            as exam_exchange_code,
+               ER.start_time      as exam_start_time,
+               ER.end_time        as exam_end_time,
+               ER.exam_name       as exam_name,
+               ER.address         as exam_address,
+               U.work_id          as work_id,
+               U.name             as name,
+               U.telephone        as telephone,
+               U.college          as college
+        from exchange_recode ER
+                 left join user U on ER.work_id = U.work_id
+        where ER.target_code = #{invigilateCode}
+    </select>
+
+
+    <resultMap id="listMyIntend" type="com.hfut.invigilate.domain.invigilate.valueobject.dto.ExchangeInfoDTO">
+        <id property="exchangeCode" column="exchange_code"/>
+        <association property="self" columnPrefix="self_" autoMapping="true">
+            <result property="date" javaType="java.time.LocalDate" column="self_date" typeHandler="org.apache.ibatis.type.LocalDateTypeHandler"/>
+        </association>
+        <association property="target" columnPrefix="target_" autoMapping="true">
+
+        </association>
+    </resultMap>
+
+    <select id="listMyIntend" resultMap="listMyIntend">
+        select ER.code                                as exchange_code,
+               ER.exam_name                           as self_exam_name,
+               date_format(ER.end_time, '%H:%i:%S')   as self_end_time,
+               date_format(ER.start_time, '%H:%i:%S') as self_start_time,
+               date_format(ER.start_time, '%Y-%m-%d') as self_date,
+               ER.address                             as self_address,
+               EI.start_time                          as target_start_time,
+               EI.end_time                            as target_end_time,
+               EI.date                                as target_date,
+               EI.address                             as target_address,
+               EI.name                                as target_exam_name
+        from exchange_recode ER
+                 left join invigilate_record IR on ER.target_code = IR.code
+                 left join exam_info EI on EI.code = IR.exam_code
+        where ER.work_id = #{workId}
+    </select>
+</mapper>

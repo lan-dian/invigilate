@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hfut.invigilate.infra.dal.dao.ExamInfoMapper">
+
+    <resultMap id="listExamInfo" type="com.hfut.invigilate.domain.invigilate.valueobject.dto.TeacherExamDTO" autoMapping="true">
+        <result property="examStateEnum" column="exam_state" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+    </resultMap>
+
+    <select id="listExamInfo" resultMap="listExamInfo">
+        select EI.name,
+               EI.date,
+               EI.start_time,
+               EI.end_time,
+               EI.address,
+               EI.student_num,
+               EI.code  as exam_code,
+               IR.state as exam_state,
+               IR.code  as invigilate_code
+        from exam_info EI
+                 left join invigilate_record IR on (IR.exam_code = EI.code)
+        where IR.work_id = #{workId}
+          and EI.date > #{date};
+    </select>
+
+    <select id="listExamInfoByDate" resultMap="listExamInfo">
+        select EI.name,
+               EI.date,
+               EI.start_time,
+               EI.end_time,
+               EI.address,
+               EI.student_num,
+               EI.code  as exam_code,
+               IR.state as exam_state,
+               IR.code  as invigilate_code
+        from exam_info EI
+                 left join invigilate_record IR on (IR.exam_code = EI.code)
+        where IR.work_id = #{workId}
+            and EI.date > #{date};
+    </select>
+
+    <select id="listTeacherExam"
+            resultType="com.hfut.invigilate.domain.invigilate.valueobject.dto.TeacherExamDTO">
+        select EI.name,
+               EI.date,
+               EI.start_time,
+               EI.end_time,
+               EI.address,
+               EI.student_num,
+               EI.code  as exam_code,
+               IR.state as exam_state,
+               IR.code  as invigilate_code
+        from exam_info EI
+                 left join invigilate_record IR on (IR.exam_code = EI.code)
+        <if test="ew!=null">
+            ${ew.customSqlSegment}
+        </if>
+    </select>
+    <resultMap id="getExamInfo" type="com.hfut.invigilate.domain.exam.valueobject.dto.ExamInfoDTO" autoMapping="true">
+        <id property="examCode" column="exam_code"/>
+        <collection property="teachers" ofType="com.hfut.invigilate.domain.invigilate.valueobject.dto.TeacherListDTO"
+                    columnPrefix="teacher_" autoMapping="true">
+            <id property="workId" column="work_id"/>
+        </collection>
+    </resultMap>
+    <select id="getExamInfoByCode" resultMap="getExamInfo">
+        select EI.name,
+               EI.date,
+               EI.start_time,
+               EI.end_time,
+               EI.address,
+               EI.student_num,
+               EI.teaching_class as class_info,
+               EI.code           as exam_code,
+               U.name            as teacher_name,
+               U.work_id         as teacher_work_id,
+               U.college         as teacher_college,
+               U.telephone       as teacher_telephone
+        from exam_info EI
+                 left join invigilate_record IR on IR.exam_code = EI.code
+                 left join user U on U.work_id = IR.work_id
+        where EI.code = #{code}
+    </select>
+    <select id="listBadStateExam" resultType="com.hfut.invigilate.domain.exam.valueobject.dto.BadStateExam">
+        select count(*) num,
+        E.code,
+        E.teacher_num,
+        E.name,
+        E.address,
+        E.date,
+        E.student_num,
+        E.start_time,
+        E.end_time
+        from exam_info E
+        left join invigilate_record JK on JK.exam_code = E.code
+        left join user U on JK.work_id = U.work_id
+        group by E.code
+        having  num &lt; E.teacher_num
+    </select>
+
+
+</mapper>
